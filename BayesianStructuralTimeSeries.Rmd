@@ -1,0 +1,99 @@
+---
+title: "Bayesian Structural Time Series"
+author: "Isaac Vernon"
+date: "6/15/2021"
+output: html_document
+---
+
+Add the various packages for the work
+```{r, hide=TRUE}
+library(lubridate)
+library(bsts)
+library(dplyr)
+library(ggplot2)
+library(forecast)
+library(readxl)
+```
+
+
+Load in the data
+```{r}
+d = read.csv("/Users/Isaac/Documents/GitHub/W210-Capstone/data/TrainingData/fulldata.csv")
+
+gdp = read.csv("/Users/Isaac/Documents/GitHub/W210-Capstone/data/CleanData/GDP.csv")
+```
+
+Start working on BSTS 
+```{r}
+# RealGDP only
+d = d[d$INDICATOR == "RealGDP", ]
+d = d[complete.cases(d[, c(2, 5, 63, 64)]), ]
+y = d$actual
+ss <- AddLocalLinearTrend(list(), y)
+ss <- AddSeasonal(ss, y, nseasons = 1)
+bsts.model = bsts(actual ~ FORECASTER.ID + QUARTER + pred_average + pred_var + 1, state.specification = ss, data =
+                d, niter = 500, ping=0, seed=2016)
+```
+
+
+This Example (Probably the same)
+https://www.unofficialgoogledatascience.com/2017/07/fitting-bayesian-structural-time-series.html
+
+```{r, hide=TRUE}
+library(bsts)
+
+d = read.csv("/Users/Isaac/Documents/GitHub/W210-Capstone/data/TrainingData/fulldata.csv")
+
+gdp = read.csv("/Users/Isaac/Documents/GitHub/W210-Capstone/data/CleanData/GDP.csv")
+
+actuals = read_excel("/Users/Isaac/Documents/GitHub/W210-Capstone/data/RawData/GDPC1.xls")
+```
+
+
+```{r}
+d = d[d$INDICATOR == "RealGDP", ]
+d = d[complete.cases(d[, c(2, 5, 63, 64)]), ]
+y = d$actual
+ss <- AddLocalLinearTrend(list(), y)
+ss <- AddSeasonal(ss, y, nseasons = 1)
+```
+
+```{r}
+#d = d[, c(2, 5, 57, 63, 64)]
+model3 <- bsts(y,
+               state.specification = ss,
+               niter = 1000)
+```
+
+```{r}
+actuals = actuals[-(1:10),]
+```
+
+```{r}
+y = as.numeric(actuals[1:72, 2]$...2)
+ss <- AddLocalLinearTrend(list(), y)
+ss <- AddSeasonal(ss, y, nseasons = 1)
+```
+
+```{r}
+model3 <- bsts(y,
+               state.specification = ss,
+               niter = 1000)
+```
+
+```{r}
+var(y)
+plot(y)
+lines(y)
+```
+
+https://minimizeregret.com/post/2020/06/07/rediscovering-bayesian-structural-time-series/
+
+```{r}
+library(rstan)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+llt_model <- stan_model("local_linear_trend.stan",
+                        model_name = "local_linear_trend")
+```
