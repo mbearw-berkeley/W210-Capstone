@@ -101,6 +101,18 @@ llt_model <- stan_model("local_linear_trend.stan",
 ```
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 Example from StitchFix, using new data
 ```{r}
 library(bsts)
@@ -149,7 +161,7 @@ plot(d2$Actual, type="l")
 Try the Variable Selection Time Series (Shifts each GDP value a quarter forward -- to remove present time dependencies)
 ```{r}
 timeseries = transform(timeseries, GDPC1_PCH=lead(GDPC1_PCH))
-timeseries2 = timeseries[149:296, 2:18]
+timeseries2 = timeseries[149:276, 2:18]
 
 newdata = timeseries[276:290, 3:18]
 
@@ -167,7 +179,6 @@ preds = as.numeric(p$mean)
 ```{r}
 plot(preds, type="l")
 plot(timeseries$GDPC1_PCH[276:290], type="l")
-plot(timeseries$GDPC1_PCH[276:286], type="l")
 ```
 
 
@@ -198,7 +209,7 @@ components.withreg <- cbind.data.frame(
   colMeans(bsts.reg$state.contributions[-(1:burn),"trend",]),
   colMeans(bsts.reg$state.contributions[-(1:burn),"seasonal.4.1",]),
   colMeans(bsts.reg$state.contributions[-(1:burn),"regression",]),
-  as.Date(time(timeseries$DATE[149:296])))  
+  as.Date(time(timeseries$DATE[149:276])))  
 names(components.withreg) <- c("Trend", "Seasonality", "Regression", "Date")
 components.withreg <- melt(components.withreg, id.vars="Date")
 names(components.withreg) <- c("Date", "Component", "Value")
