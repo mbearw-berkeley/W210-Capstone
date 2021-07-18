@@ -124,6 +124,9 @@ ggplot(data=components.withreg, aes(x=Date, y=Value)) + geom_line() +
 
 
 ```{r}
+timeseries = read.csv("/Users/Isaac/Documents/GitHub/W210-Capstone/data/CleanData/QuarterlyFredWithItems.csv")
+
+
 y = timeseries$UNRATE[1:286]
 actuals = timeseries$UNRATE[287:296]
 ss <- AddLocalLinearTrend(list(), y)
@@ -230,6 +233,8 @@ ggplot(data=components.withreg, aes(x=Date, y=Value)) + geom_line() +
 
 
 ```{r}
+timeseries = read.csv("/Users/Isaac/Documents/GitHub/W210-Capstone/data/CleanData/QuarterlyFredWithItems.csv")
+
 y = timeseries$PCEPILFE[1:286]
 actuals = timeseries$PCEPILFE[287:296]
 ss <- AddLocalLinearTrend(list(), y)
@@ -289,7 +294,7 @@ rmse(actuals, preds)
 
 ```{r}
 plot(preds, type="l")
-plot(timeseries$GDPC1_PCH[276:290], type="l")
+plot(timeseries$PCEPILFE[276:290], type="l")
 ```
 
 
@@ -336,8 +341,11 @@ ggplot(data=components.withreg, aes(x=Date, y=Value)) + geom_line() +
 
 
 ```{r}
+timeseries = read.csv("/Users/Isaac/Documents/GitHub/W210-Capstone/data/CleanData/QuarterlyFredWithItems.csv")
+
+
 y = timeseries$CPILFESL[1:286]
-actuals = timeseries$CPIFESL[287:296]
+actuals = timeseries$CPILFESL[287:296]
 ss <- AddLocalLinearTrend(list(), y)
 ss <- AddSeasonal(ss, y, nseasons = 4)
 bsts.model <- bsts(y, state.specification = ss, niter = 500, ping=0, seed=2016)
