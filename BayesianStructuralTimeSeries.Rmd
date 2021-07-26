@@ -7,6 +7,9 @@ output: html_document
 
 
 Example from StitchFix, using new data
+
+THE DATA IS SETUP TO FORECAST 2017, 2018, 2019
+
 ```{r}
 library(bsts)
 library(dplyr)
