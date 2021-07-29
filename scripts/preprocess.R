@@ -242,7 +242,7 @@ rm(spf2)
 # Save Full Data Frame
 final <- spf %>%
   group_by(`YEAR FORECAST MADE`, QUARTER, `YEAR BEING FORECAST`, INDICATOR)
-write.csv(final, "./data/CleanedData/RProcessed.csv", row.names = FALSE, na ="")
+write.csv(final, "./data/CleanData/RProcessed.csv", row.names = FALSE, na ="")
 # 
 # set.seed(11396)
 # training <- spf %>%

@@ -54,7 +54,7 @@ def toQuarter(month):
 
 
 def formatData(filename):
-    data = pd.read_csv('../data/RawData/BLS/'+filename,usecols=["Year","Period","Value"])
+    data = pd.read_csv('./data/RawData/BLS/'+filename,usecols=["Year","Period","Value"])
     data=data[data["Year"]>=1992]
     data.Period = data.Period.apply(lambda x: x[1:]).astype("int")
     data["Quarter"] = data.Period.apply(toQuarter)
@@ -64,7 +64,7 @@ def formatData(filename):
 
 def combine(df,left_on_col = ["YEAR FORECAST MADE","QUARTER"]):
     returnFrame = df.copy()
-    for filename in os.listdir("../data/RawData/BLS"):
+    for filename in os.listdir("./data/RawData/BLS"):
         to_merge = formatData(filename).reset_index(level=[0,1])
         to_merge.rename(columns={"Value":filename.split(".")[0]},inplace=True)
         returnFrame = returnFrame.merge(to_merge,how="outer",left_on=left_on_col,right_on=["Year","Quarter"],suffixes=('', '_drop'))
@@ -79,15 +79,15 @@ def main():
 
     for filename in os.listdir("./data/RawData/BLS"):
         name = filename.split(".")[0]
-        print("Adding " name)
+        print("Adding " +name)
         df = update_items(filename)
         df.to_csv("./data/RawData/BLS/"+name+".csv",index=False)    
         time.sleep(5)
 
-    fromR = pd.read_csv("./data/CleanedData/RProcessed.csv")
+    fromR = pd.read_csv("./data/CleanData/RProcessed.csv")
 
     fullData = combine(fromR)
-    fullData.to_csv("./data/CleanedData/fullData.csv",index=False)
+    fullData.to_csv("./data/CleanData/fullData.csv",index=False)
     print("Completed Adding Prices to Training Data! ")
 
 
