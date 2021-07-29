@@ -65,7 +65,7 @@ rm(GDP, CCPI, CPCE, UNEMP)
 # goes row by row through the data, looking for year and quarter, then looking at indicators
 # pulls the actual for the data point by going to the FRED data and filtering it by year being forecast
 # then finds the interval the actual belongs in and returns the bin number
-
+here <- NA
 actual_bin <- Vectorize(function(year_forecast_made, quarter, year_being_forecast, indicator, return = c("actual", "bin")) {
   yq_forecast_made <- as.yearqtr(paste(year_forecast_made, quarter, sep = "q"))
   if (indicator=="RealGDP") {
@@ -77,6 +77,7 @@ actual_bin <- Vectorize(function(year_forecast_made, quarter, year_being_forecas
     }
   } else if (indicator=="Unemployment") {
     actual <- actuals_unemp$value[as.Date(actuals_unemp$year)==as.Date(paste0(year_being_forecast,"-01-01"), format = "%Y-%m-%d")]
+    here <- actual
     if (yq_forecast_made>=as.yearqtr("2009q2") & yq_forecast_made<=as.yearqtr("2013q4")) {
       bin <- 10-findInterval(actual, c(6, 7, 7.5, 8, 8.5, 9, 9.5, 10, 11))
     } else if (yq_forecast_made>=as.yearqtr("2014q1")) {
@@ -241,7 +242,7 @@ rm(spf2)
 # Save Full Data Frame
 final <- spf %>%
   group_by(`YEAR FORECAST MADE`, QUARTER, `YEAR BEING FORECAST`, INDICATOR)
-write.csv(final, "./data/TrainingData/fulldata.csv", row.names = FALSE, na ="")
+write.csv(final, "./data/CleanedData/RProcessed.csv", row.names = FALSE, na ="")
 # 
 # set.seed(11396)
 # training <- spf %>%

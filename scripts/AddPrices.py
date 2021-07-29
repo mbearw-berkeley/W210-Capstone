@@ -54,8 +54,8 @@ def toQuarter(month):
 
 
 def formatData(filename):
-    data = pd.read_csv('./data/RawData/BLS/'+filename,usecols=["Year","Period","Value"])
-    
+    data = pd.read_csv('../data/RawData/BLS/'+filename,usecols=["Year","Period","Value"])
+    data=data[data["Year"]>=1992]
     data.Period = data.Period.apply(lambda x: x[1:]).astype("int")
     data["Quarter"] = data.Period.apply(toQuarter)
     data = data.drop(columns=["Period"])
@@ -64,17 +64,13 @@ def formatData(filename):
 
 def combine(df,left_on_col = ["YEAR FORECAST MADE","QUARTER"]):
     returnFrame = df.copy()
-    for filename in os.listdir("./data/RawData/BLS"):
+    for filename in os.listdir("../data/RawData/BLS"):
         to_merge = formatData(filename).reset_index(level=[0,1])
         to_merge.rename(columns={"Value":filename.split(".")[0]},inplace=True)
-        returnFrame = returnFrame.merge(to_merge,how="left",left_on=left_on_col,right_on=["Year","Quarter"],suffixes=('', '_drop')).fillna(method="ffill")
-        #returnFrame = returnFrame.merge(to_merge,how="left",left_on=left_on_col,right_on=["Year","Quarter"],suffixes=('', '_drop')).fillna(method="ffill")
+        returnFrame = returnFrame.merge(to_merge,how="outer",left_on=left_on_col,right_on=["Year","Quarter"],suffixes=('', '_drop'))
     returnFrame = returnFrame[returnFrame.columns.drop(returnFrame.filter(regex='drop').columns)]
     return returnFrame.drop(columns=["Year","Quarter"])
- 
-
-
-
+    
 
 
 
@@ -83,45 +79,20 @@ def main():
 
     for filename in os.listdir("./data/RawData/BLS"):
         name = filename.split(".")[0]
-        print(name)
+        print("Adding " name)
         df = update_items(filename)
         df.to_csv("./data/RawData/BLS/"+name+".csv",index=False)    
         time.sleep(5)
 
-    training = pd.read_csv("./data/TrainingData/fulldata.csv")
+    fromR = pd.read_csv("./data/CleanedData/RProcessed.csv")
 
-    newTraining = combine(training)
-    newTraining.to_csv("./data/TrainingData/trainingWithItems.csv",index=False)
+    fullData = combine(fromR)
+    fullData.to_csv("./data/CleanedData/fullData.csv",index=False)
     print("Completed Adding Prices to Training Data! ")
 
 
 
 main()
-
-
-
-
-
-
-# quarterFred= pd.read_csv("../data/CleanData/QuarterlyFred.csv",index_col=0)
-# quarterFred["DATE"] = quarterFred["DATE"].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
-# quarterFred["Year"] = quarterFred["DATE"].apply(lambda x:x.year)
-# quarterFred["Month"] = quarterFred["DATE"].apply(lambda y:y.month)
-# quarterFred["Quarter"] = quarterFred["Month"].apply(toQuarter)
-# quarterFred.drop(columns=["Month"],inplace=True)
-# quarterFred.head()
-
-
-# # In[97]:
-
-
-# newQuarterly = combine(quarterFred,["Year","Quarter"])
-# newQuarterly.head()
-# #newQuarterly.to_csv("../data/CleanData/QuarterlyFredWithItems.csv",index=False)
-
-
-# # In[ ]:
-
 
 
 
