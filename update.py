@@ -15,3 +15,5 @@ r['source']('scripts/preprocess.R')
 import AddPrices
 
 print("Data update completed! ")
+import SplitData
+print("Data split completed!")
