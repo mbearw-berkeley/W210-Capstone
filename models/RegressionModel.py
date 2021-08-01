@@ -1,11 +1,15 @@
 import pandas as pd
 from sklearn.metrics import r2_score
+from sklearn.base import clone
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import seaborn as sns
 from sklearn.model_selection import train_test_split,GridSearchCV
-
+#from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from xgboost import XGBRegressor
+#from sklearn.neighbors import KNeighborsRegressor
 
 
 
@@ -14,13 +18,14 @@ def MeasureSplit(df,measure):
     return df[df["INDICATOR"]==measure].drop(columns = ["actual","INDICATOR","YEAR BEING FORECAST"]),df[df["INDICATOR"]==measure]["actual"]
 
 
-
 class RegressionModel:
     measures = ["Unemployment","RealGDP","Core CPI","Core PCE"]
     
     def __init__(self,name,model):
+        self.years = None
         self.name = name
         self.model = model
+        self.fitted_models = dict.fromkeys(self.measures,None)
         self.rmse_scores = []
         self.optimized_rmse_scores = []
         self.optimized_r2_scores = []
@@ -49,7 +54,7 @@ class RegressionModel:
                 X_test,y_test = MeasureSplit(val,measure)
             else: 
                 X_test,y_test = MeasureSplit(test,measure)
-            predictions = self.get_predictions(measure)
+            predictions = self.get_predictions(measure) 
             rmse.append(np.sqrt(np.mean((y_test-predictions)**2)))
             r2.append(r2_score(y_test,predictions))
         return 
@@ -64,18 +69,23 @@ class RegressionModel:
         return plt.show()
     
     def get_predictions(self,variable_name):
-        #calculates and stores scores
+        assert variable_name in self.measures
         #returns predictions for specified measure
         if self.optimized==True:
             model = self.best_models[variable_name]
+        elif self.fitted_models[self.measures[3]] == None:
+            model = clone(self.model)
         else:
-            model = self.model
+            model = self.fitted_models[variable_name]
+        print(model)
         X_train,y_train = MeasureSplit(train,variable_name)
         if self.validation:
             X_test,y_test = MeasureSplit(val,variable_name)
         else: 
             X_test,y_test = MeasureSplit(test,variable_name)
         model.fit(X_train,y_train)
+        if self.optimized == False:
+            self.fitted_models[variable_name] = model
         return model.predict(X_test)
     
     def create_results(self):
@@ -84,26 +94,28 @@ class RegressionModel:
             data[measure] = self.get_predictions(measure)
         return pd.DataFrame(dict([ (self.name+" "+k,pd.Series(v)) for k,v in data.items()]))
     
-    def annual_performance(self, variable_name, measure, plot=True):
-        X_train,y_train = MeasureSplit(train,variable_name)
-        if self.validation:
-            X_test,y_test = MeasureSplit(val,variable_name)
-        else: 
-            X_test,y_test = MeasureSplit(test,variable_name)
-            
-        preds = self.get_predictions(measure)
-        actuals = val[val["INDICATOR"]==measure]['actual']
-        spf_preds = val[val["INDICATOR"]==measure]['pred_average']
-        years = val[val["INDICATOR"]==measure]['YEAR BEING FORECAST']
+    def annual_performance(self, variable_name, plot=True):
+        assert variable_name in self.measures
+        preds = self.get_predictions(variable_name)
+        actuals = val[val["INDICATOR"]==variable_name]['actual']
+        spf_preds = val[val["INDICATOR"]==variable_name]['pred_average']
+        years = val[val["INDICATOR"]==variable_name]['YEAR BEING FORECAST']
         frame = pd.DataFrame({"Actual": actuals, "SPF": spf_preds, "Model": preds, "Year": years})
         grouped = frame.groupby("Year").mean()
-        
+        self.years = years
         if plot == True:
-            plt.plot(grouped['Actual'])
-            plt.plot(grouped['SPF'])
-            plt.plot(grouped['Model'])
+            fig,ax = plt.subplots(1,1,figsize=(25,10))
+            #plt.title("Historical Model Performance predicting "+variable_name,size=30)
+            
+            plt.plot(grouped['Actual'],linewidth=4)
+            plt.plot(grouped['SPF'],linewidth=4)
+            plt.plot(grouped['Model'],linewidth=4)
             labels = ["Actual", "SPF", "Model"]
-            plt.legend(labels)
+            #plt.xlabel("Year",size=30)
+            #plt.ylabel("Percent Change", size=30)
+            plt.legend(labels,loc="lower left",prop={'size': 30})
+            ax.tick_params(axis='both', which='major', labelsize=30)
+            ax.tick_params(axis='both', which='minor', labelsize=30)
             plt.show()
             
         return grouped
@@ -120,6 +132,17 @@ class RegressionModel:
             self.best_models[measure]=find_optimal_model(measure)
         self.optimized=True
         return
+    
+    def get_feature_importance(self,variable_name):
+        assert variable_name in self.measures
+        X_train,y_train = MeasureSplit(train,variable_name)
+        model= self.fitted_models[variable_name].fit(X_train,y_train)
+        fig,axs = plt.subplots(1,1,figsize=(25,10))
+        sorted_scores = model.feature_importances_.argsort()
+        sns.barplot(x=X_train.columns[sorted_scores],y=model.feature_importances_[sorted_scores])
+        plt.xlabel("Feature")
+        plt.ylabel("Importance")
+        plt.title("Feature Importance for "+self.name + " predicting: "+variable_name ,size=30);
 
 
-def main():
+

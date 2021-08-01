@@ -71,8 +71,13 @@ def combine(df,left_on_col = ["YEAR FORECAST MADE","QUARTER"]):
     returnFrame = returnFrame[returnFrame.columns.drop(returnFrame.filter(regex='drop').columns)]
     return returnFrame.drop(columns=["Year","Quarter"])
     
-
-
+def add_conf(df):
+    data = df.copy()
+    avg_conf = data.groupby(["FORECASTER ID"]).agg({"ACTUAL_CONF": np.mean}).reset_index()
+    avg_conf.fillna(avg_conf["ACTUAL_CONF"].mean(),inplace=True)
+    avg_conf.rename(columns={"ACTUAL_CONF":"FORECASTER_CONF"},inplace=True)
+    full_data = data.merge(avg_conf,how="left",left_on="FORECASTER ID",right_on="FORECASTER ID")
+    return full_data
 
 def main():
 
@@ -87,6 +92,7 @@ def main():
     fromR = pd.read_csv("./data/CleanData/RProcessed.csv")
 
     fullData = combine(fromR)
+    fullData = add_conf(fullData)
     fullData.to_csv("./data/CleanData/fullData.csv",index=False)
     print("Completed Adding Prices to Training Data! ")
 
