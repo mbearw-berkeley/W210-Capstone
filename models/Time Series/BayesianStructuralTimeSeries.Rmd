@@ -14,8 +14,30 @@ THE DATA IS SETUP TO FORECAST 2017, 2018, 2019
 library(bsts)
 library(dplyr)
 library(Metrics)
+library(dplyr)
+library(tidyr)
+library(readxl)
+library(ggplot2)
+library(scales)
+library(zoo)
+library(lmerTest)
+library(lme4)
 
 timeseries = read.csv("/Users/Isaac/Documents/GitHub/W210-Capstone/models/Time Series/QuarterlyFredWithItems.csv")
+
+```
+
+```{r}
+actuals_ccpi <- read_excel("/Users/Isaac/Documents/GitHub/W210-Capstone/data/RawData/CPILFESL.xls", skip = 11, col_names = c("year", "value"))
+actuals_cpce <- read_excel("/Users/Isaac/Documents/GitHub/W210-Capstone/data/RawData/PCEPILFE.xls", skip = 11, col_names = c("year", "value"))
+
+actuals_ccpi <- actuals_ccpi[quarters(actuals_ccpi$year)=="Q4",]
+actuals_ccpi$value <- ((actuals_ccpi$value/c(NA,actuals_ccpi$value[1:(length(actuals_ccpi$value)-1)]))-1)*100
+actuals_ccpi$year <- as.Date(paste0(substr(actuals_ccpi$year, 1, 4),"-01-01"), format = "%Y-%m-%d")
+
+actuals_cpce <- actuals_cpce[quarters(actuals_cpce$year)=="Q4",]
+actuals_cpce$value <- ((actuals_cpce$value/c(NA,actuals_cpce$value[1:(length(actuals_cpce$value)-1)]))-1)*100
+actuals_cpce$year <- as.Date(paste0(substr(actuals_cpce$year, 1, 4),"-01-01"), format = "%Y-%m-%d")
 
 ```
 
@@ -218,11 +240,32 @@ plot(d2$Actual, type="l")
 
 Try the Variable Selection Time Series (Shifts each GDP value a quarter forward -- to remove present time dependencies)
 ```{r}
-timeseries = transform(timeseries, UNRATE=lead(UNRATE))
-timeseries2 = timeseries[149:279, 2:18]
+timeseries = read.csv("/Users/Isaac/Documents/GitHub/W210-Capstone/models/Time Series/QuarterlyFredWithItems.csv")
 
-newdata = timeseries[280:291, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)]
-actuals = timeseries[280:291, 8]
+# 263 - 2012
+# 267 - 2013
+# 271 - 2014
+# 275 - 2015
+# 279 - 2016
+# 283 - 2017
+# 287 - 2018
+# 291 - 2019
+# 295 - 2020
+
+# 299 - 2021
+
+timeseries = transform(timeseries, UNRATE=lead(UNRATE))
+timeseries2 = timeseries[248:291, 2:18]
+timeseries2$pred_average = rep(undata$pred_average[1:11], each=4)
+timeseries2$conf = rep(undata$FORECASTER_CONF[1:11], each=4)
+
+
+
+newdata = timeseries[292:296, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)]
+newdata$pred_average = c(rep(undata$pred_average[12], each = 4), undata$pred_average[13])
+newdata$conf = c(rep(undata$FORECASTER_CONF[12], each = 4),undata$FORECASTER_CONF[13])
+
+actuals = timeseries[292:296, 8]
 
 
 ss <- AddLocalLinearTrend(list(), timeseries2$UNRATE)
@@ -230,13 +273,16 @@ ss <- AddSeasonal(ss, timeseries2$UNRATE, nseasons = 4)
 bsts.reg <- bsts(UNRATE ~ ., state.specification = ss, data =
                 timeseries2, niter = 500, ping=0, seed=2016)
 
-p <- predict.bsts(bsts.reg, newdata=newdata, horizon = 12, burn = burn, quantiles = c(.025, .975))
+p <- predict.bsts(bsts.reg, newdata=newdata, horizon = 8, burn = burn, quantiles = c(.025, .975))
 
 preds = as.numeric(p$mean)
-aggpred = c(mean(preds[1:4]), mean(preds[5:8]), mean(preds[9:12]))
-rmse(actuals, preds)
-aggactuals = c(mean(actuals[1:4]), mean(actuals[5:8]), mean(actuals[9:12]))
-rmse(aggactuals, aggpred)
+#aggpred = c(mean(preds[1:4]), mean(preds[5:8]), mean(preds[9:12]))
+aggpred = mean(preds)
+#rmse(actuals, preds)
+#aggactuals = c(mean(actuals[1:4]), mean(actuals[5:8]), mean(actuals[9:12]))
+#rmse(aggactuals, aggpred)
+#l = array(aggpred)
+#l = append(l, aggpred)
 ```
 
 
@@ -332,11 +378,32 @@ plot(d2$Actual, type="l")
 
 Try the Variable Selection Time Series (Shifts each GDP value a quarter forward -- to remove present time dependencies)
 ```{r}
-timeseries = transform(timeseries, PCEPILFE=lead(PCEPILFE))
-timeseries2 = timeseries[149:279, 2:18]
+timeseries = read.csv("/Users/Isaac/Documents/GitHub/W210-Capstone/models/Time Series/QuarterlyFredWithItems.csv")
 
-newdata = timeseries[280:291, c(2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)]
-actuals = timeseries[280:291, 6]
+# 259 - 2011
+# 263 - 2012
+# 267 - 2013
+# 271 - 2014
+# 275 - 2015
+# 279 - 2016
+# 283 - 2017
+# 287 - 2018
+# 291 - 2019
+# 295 - 2020
+
+# 299 - 2021
+timeseries = transform(timeseries, PCEPILFE=lead(PCEPILFE))
+timeseries2 = timeseries[240:263, 2:18]
+
+timeseries2$pred_average = rep(pcedata$pred_average[1:6], each=4)
+timeseries2$conf = rep(pcedata$FORECASTER_CONF[1:6], each=4)
+
+
+newdata = timeseries[264:267, c(2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)]
+
+newdata$pred_average = rep(pcedata$pred_average[7], each = 4)#, datas$pred_average[30]/4)
+newdata$conf = rep(pcedata$FORECASTER_CONF[7], each = 4)#, pcedata$FORECASTER_CONF[30]/4)
+actuals = timeseries[264:267, 6]
 
 
 ss <- AddLocalLinearTrend(list(), timeseries2$PCEPILFE)
@@ -347,10 +414,12 @@ bsts.reg <- bsts(PCEPILFE ~ ., state.specification = ss, data =
 p <- predict.bsts(bsts.reg, newdata=newdata, horizon = 12, burn = burn, quantiles = c(.025, .975))
 
 preds = as.numeric(p$mean)
-aggpred = c(mean(preds[1:4]), mean(preds[5:8]), mean(preds[9:12]))
-rmse(actuals, preds)
-aggactuals = c(mean(actuals[1:4]), mean(actuals[5:8]), mean(actuals[9:12]))
-rmse(aggactuals, aggpred)
+#aggpred = c(mean(preds[1:4]), mean(preds[5:8]), mean(preds[9:12]))
+aggpred = mean(preds)
+#rmse(actuals, preds)
+#aggactuals = c(mean(actuals[1:4]), mean(actuals[5:8]), #rmse(aggactuals, aggpred)
+l = array(aggpred)
+#l = append(l, aggpred)
 ```
 
 
@@ -447,10 +516,31 @@ plot(d2$Actual, type="l")
 
 Try the Variable Selection Time Series (Shifts each GDP value a quarter forward -- to remove present time dependencies)
 ```{r}
+timeseries = read.csv("/Users/Isaac/Documents/GitHub/W210-Capstone/models/Time Series/QuarterlyFredWithItems.csv")
+
+# 259 - 2011
+# 263 - 2012
+# 267 - 2013
+# 271 - 2014
+# 275 - 2015
+# 279 - 2016
+# 283 - 2017
+# 287 - 2018
+# 291 - 2019
+# 295 - 2020
+
+# 299 - 2021
 timeseries = transform(timeseries, CPILFESL=lead(CPILFESL))
 timeseries2 = timeseries[149:279, 2:18]
 
+timeseries2$pred_average = rep(cpidata$pred_average[1:28]/4, each=4)
+timeseries2$conf = rep(cpidata$FORECASTER_CONF[1:28]/4, each=4)
+
+
 newdata = timeseries[280:291, c(2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)]
+newdata$pred_average = rep(pcedata$pred_average[29]/4, each = 4)#, datas$pred_average[30]/4)
+newdata$conf = rep(pcedata$FORECASTER_CONF[29]/4, each = 4)#, pcedata$FORECASTER_CONF[30]/4)
+
 actuals = timeseries[280:291, 5]
 
 
@@ -462,10 +552,12 @@ bsts.reg <- bsts(CPILFESL ~ ., state.specification = ss, data =
 p <- predict.bsts(bsts.reg, newdata=newdata, horizon = 12, burn = burn, quantiles = c(.025, .975))
 
 preds = as.numeric(p$mean)
-aggpred = c(mean(preds[1:4]), mean(preds[5:8]), mean(preds[9:12]))
-rmse(actuals, preds)
-aggactuals = c(mean(actuals[1:4]), mean(actuals[5:8]), mean(actuals[9:12]))
-rmse(aggactuals, aggpred)
+#aggpred = c(mean(preds[1:4]), mean(preds[5:8]), mean(preds[9:12]))
+aggpred = sum(preds)
+#rmse(actuals, preds)
+#aggactuals = c(mean(actuals[1:4]), mean(actuals[5:8]), #rmse(aggactuals, aggpred)
+l = array(aggpred)
+#l = append(l, aggpred)
 ```
 
 
