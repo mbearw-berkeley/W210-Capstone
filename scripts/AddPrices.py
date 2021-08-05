@@ -17,6 +17,9 @@ item_dict["banana"] = "APU0000711211"
 item_dict["coffee"] = "APU0000717311"
 item_dict["beef"] = "APU0000703112"
 item_dict["iceCream"] = "APU0000710411" 
+item_dict["oranges"] = "APU0000711311"
+#item_dict["tomato"] = " APU0000712311"
+item_dict["cookies"] = "APU0000702421"
 
 def update_items(filename):
     data = pd.read_csv('./data/RawData/BLS/'+filename)

@@ -15,5 +15,5 @@ sys.path.insert(0,"scripts")
 import AddPrices
 
 print("Data update completed! ")
-import SplitData
-print("Data split completed!")
+#import SplitData
+#print("Data split completed!")
