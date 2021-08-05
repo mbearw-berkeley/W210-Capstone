@@ -65,7 +65,6 @@ rm(GDP, CCPI, CPCE, UNEMP)
 # goes row by row through the data, looking for year and quarter, then looking at indicators
 # pulls the actual for the data point by going to the FRED data and filtering it by year being forecast
 # then finds the interval the actual belongs in and returns the bin number
-here <- NA
 actual_bin <- Vectorize(function(year_forecast_made, quarter, year_being_forecast, indicator, return = c("actual", "bin")) {
   yq_forecast_made <- as.yearqtr(paste(year_forecast_made, quarter, sep = "q"))
   if (indicator=="RealGDP") {
@@ -111,6 +110,7 @@ actuals_table <- spf %>%
   summarise() %>%
   mutate(actual = actual_bin(year_forecast_made = `YEAR FORECAST MADE`, quarter = QUARTER, year_being_forecast = `YEAR BEING FORECAST`, indicator = INDICATOR, return = "actual"),
          ACTUAL_BIN = actual_bin(year_forecast_made = `YEAR FORECAST MADE`, quarter = QUARTER, year_being_forecast = `YEAR BEING FORECAST`, indicator = INDICATOR, return = "bin"))
+actuals_table[actuals_table$`YEAR BEING FORECAST`==2021&actuals_table$INDICATOR=="RealGDP","actual"]<-NA
 spf <- merge(x = spf, y = actuals_table, by = c("YEAR FORECAST MADE", "QUARTER", "YEAR BEING FORECAST", "INDICATOR"), all.x = TRUE) #want to keep all rows in SPF all.X, even if it doesn't merge in SPF table
 rm( actuals_rgdp, actuals_unemp, actuals_ccpi, actuals_cpce)
 

@@ -12,8 +12,8 @@ sys.path.insert(0,"scripts")
 # r = robjects.r
 # r['source']('scripts/preprocess.R')
 
-#import AddPrices
+import AddPrices
 
-# print("Data update completed! ")
+print("Data update completed! ")
 import SplitData
 print("Data split completed!")
